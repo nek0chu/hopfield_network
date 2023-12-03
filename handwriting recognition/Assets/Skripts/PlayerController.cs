@@ -47,13 +47,13 @@ public class PlayerController : MonoBehaviour
     {
         isPressed = true;
         StartCoroutine(onPressing());
-        Debug.Log("Press started");
+        //Debug.Log("Press started");
     }
     private void Press_canceled(InputAction.CallbackContext obj)
     {
         isPressed = false;
         StopCoroutine(onPressing());
-        Debug.Log("Press canceled");
+        //Debug.Log("Press canceled");
     }
     private void OnEnable()
     {
@@ -89,14 +89,35 @@ public class PlayerController : MonoBehaviour
                 }
                 _texture.Apply();
             }
-            Debug.Log("kefefjeij");
+            //Debug.Log("kefefjeij");
             yield return null;
         }
     }
-
+    public void SetTexture(Texture2D setTexture)
+    {
+        _texture = setTexture;
+        _texture.Apply();
+        OnValidate();
+    }
     public Texture2D GetTexture()
     {
         return _texture;
+    }
+    public Material GetMaterial()
+    {
+        return _material;
+    }
+    public TextureWrapMode GetWrapMode()
+    {
+        return _textureWrapMode;
+    }
+    public FilterMode GetFilterMode()
+    {
+        return _filterMode;
+    }
+    public int GetTextureSize()
+    {
+        return _textureSize;
     }
     public void FillTextureWithWhite()
     {

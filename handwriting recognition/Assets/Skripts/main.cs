@@ -18,6 +18,10 @@ public class main : MonoBehaviour
     {
         vectors.Add(newVector);
     }
+    public  Vector<double> GetLastVector()
+    {
+        return vectors[vectors.Count - 1];
+    }
     // Функция для расчета матрицы W
     public Matrix<double> CalculateWeightMatrix(Vector<double>[] trainingVectors)
     {
@@ -139,14 +143,15 @@ public class main : MonoBehaviour
         for (int i = 0; i < candidates.Length; i++)
         {
             double hammingDistance = HammingDistance(targetVector, candidates[i]);
-
             if (hammingDistance < minHammingDistance)
             {
                 minHammingDistance = hammingDistance;
                 bestMatchIndex = i;
             }
+            //Debug.Log("hamming distance "+ hammingDistance + " index " + bestMatchIndex);
         }
 
+        Debug.Log("min hamming distance " + minHammingDistance + " beast match index " + bestMatchIndex);
         return bestMatchIndex;
     }
 
@@ -182,8 +187,7 @@ public class main : MonoBehaviour
         int numberOfRecognizedVector = FindBestMatchIndex(columnVector, trainingVectors);
         inputVectorToRecognize = columnVector;
         // Вывод матрицы W
-        Debug.Log("Матрица W:");
-        Debug.Log(numberOfRecognizedVector);
+        Debug.Log("Порядковый номер вектора " + numberOfRecognizedVector);
         Debug.Log(inputVectorToRecognize);
     }
     public void Main()

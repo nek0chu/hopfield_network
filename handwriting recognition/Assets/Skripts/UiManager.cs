@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class UiManager : MonoBehaviour
 {
+    [SerializeField] private Material basedMaterial;
     [SerializeField] private PlayerController playerController;
     [SerializeField] private main mainSkript;
     [SerializeField] private GameObject GridLayout; 
@@ -16,6 +17,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] private Button addNewTrainVectorButton;
     [SerializeField] private Button clearButton;
     [SerializeField] private Button checkCurrentImageButton;
+    [SerializeField] private Button showOnQuadButton;
     void Start()
     {
         openImagesToTrainButton.onClick.AddListener(() => imagesToTrainOn.SetActive(true)); 
@@ -23,7 +25,15 @@ public class UiManager : MonoBehaviour
         addNewTrainVectorButton.onClick.AddListener(AddNewTrainVector);
         clearButton.onClick.AddListener(playerController.FillTextureWithWhite);
         checkCurrentImageButton.onClick.AddListener(CheckCurrentImage);
+        showOnQuadButton.onClick.AddListener(ShowLastVector);
         playerController.FillTextureWithWhite();
+    }
+    public void ShowLastVector()
+    {
+        Texture2D newTexture = playerController.GetTexture();
+        int size = playerController.GetTextureSize();
+        newTexture = VectorToTexture(mainSkript.GetLastVector(), size, size);
+        playerController.SetTexture(newTexture);
     }
     public void CheckCurrentImage()
     {
@@ -46,8 +56,10 @@ public class UiManager : MonoBehaviour
         // Копируем текстуру, чтобы изменения не затрагивали оригинал
         Texture2D copiedTexture = new Texture2D(newTexture.width, newTexture.height);
         copiedTexture.SetPixels(newTexture.GetPixels());
+        copiedTexture.filterMode = playerController.GetFilterMode();
+        copiedTexture.wrapMode = playerController.GetWrapMode();
         copiedTexture.Apply();
-
+        rawImage.material = basedMaterial;
         // Присваиваем текстуру RawImage
         rawImage.texture = copiedTexture;
 
@@ -71,16 +83,16 @@ public class UiManager : MonoBehaviour
         // Проходим по каждому пикселю
         for (int i = 0; i < pixels.Length; i++)
         {
-            // Если цвет пикселя чёрный (или близок к чёрному)
-            if (pixels[i].r < 0.1f && pixels[i].g < 0.1f && pixels[i].b < 0.1f)
+            // Если цвет пикселя белая  (или близок к чёрному)
+            if (pixels[i].r > 0.95f && pixels[i].g > 0.95f && pixels[i].b > 0.95f)
             {
                 // Присваиваем 1
-                resultVector[i] = 1.0;
+                resultVector[i] = -1.0;
             }
             else
             {
                 // Иначе присваиваем 0
-                resultVector[i] = -1.0;
+                resultVector[i] = 1.0;
             }
         }
 
