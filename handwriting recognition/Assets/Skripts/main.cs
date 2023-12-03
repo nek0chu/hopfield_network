@@ -8,9 +8,15 @@ using MathNet.Numerics;
 
 public class main : MonoBehaviour
 {
+    private List<Vector<double>> vectors = new List<Vector<double>>();
+
     void Start()
     {
         Main();
+    }
+    public void AddVector(Vector<double> newVector)
+    {
+        vectors.Add(newVector);
     }
     // Функция для расчета матрицы W
     public Matrix<double> CalculateWeightMatrix(Vector<double>[] trainingVectors)
@@ -78,14 +84,16 @@ public class main : MonoBehaviour
     }
     public Matrix<double> MultiplyMatrixByVector(Matrix<double> matrix, Vector<double> vector)
     {
-        // Умножение матрицы на вектор-столбец
-        Vector<double> resultVector = matrix.Multiply(vector);
+        // Умножение матрицы на транспонированный вектор-столбец
+        Vector<double> resultVector = matrix.Multiply(vector.ToColumnMatrix().Column(0));
 
         // Создание матрицы из вектора-столбца
         Matrix<double> resultMatrix = Matrix<double>.Build.DenseOfColumnVectors(resultVector);
 
         return resultMatrix;
     }
+
+
     public Vector<double> MultiplyMatrixByVector2(Matrix<double> matrix, Vector<double> vector)
     {
         // Умножение матрицы на вектор-столбец
@@ -158,25 +166,9 @@ public class main : MonoBehaviour
         return differingBits;
     }
     // Пример использования
-    public void Main()
+    public void HopfieldNeuralNetWork(Vector<double> inputVectorToRecognize)
     {
-        // Пример обучающих векторов
-        Vector<double>[] trainingVectors = new[]
-        {
-            Vector<double>.Build.DenseOfArray(new double[] { 1, 1, 1 , 1, -1, 1, 1, -1, 1}),
-            Vector<double>.Build.DenseOfArray(new double[] { 1, 1, 1 , 1, -1, -1, 1, -1, -1}),
-            Vector<double>.Build.DenseOfArray(new double[] { 1, -1, -1 , 1, -1, -1, 1, 1, 1}),
-            // Добавьте другие векторы по мере необходимости
-        };
-        Vector<double> inputVectorToRecognize = Vector<double>.Build.DenseOfArray(new double[] { -1, -1, -1, 1, -1, -1, 1, -1, -1 });
-        /*Vector<double>[] trainingVectors = new[]
-        {
-            Vector<double>.Build.DenseOfArray(new double[] { -1, 1, -1 , 1}),
-            Vector<double>.Build.DenseOfArray(new double[] { 1, -1, 1 , 1}),
-            Vector<double>.Build.DenseOfArray(new double[] { -1, 1, -1 , -1}),
-            // Добавьте другие векторы по мере необходимости
-        };*/
-
+        Vector<double>[] trainingVectors = vectors.ToArray();
         // Рассчет матрицы W с обнулёнными диагоналями и нормализовнный
         Matrix<double> weightMatrix = CalculateWeightMatrix(trainingVectors);
         // Умножаем на транспонировнный вектор который хотим расопзнать
@@ -193,5 +185,17 @@ public class main : MonoBehaviour
         Debug.Log("Матрица W:");
         Debug.Log(numberOfRecognizedVector);
         Debug.Log(inputVectorToRecognize);
+    }
+    public void Main()
+    {
+        // Пример обучающих векторов
+        Vector<double>[] trainingVectors = new[]
+        {
+            Vector<double>.Build.DenseOfArray(new double[] { 1, 1, 1, 1, -1, 1, 1, -1, 1}),
+            Vector<double>.Build.DenseOfArray(new double[] { 1, 1, 1, 1, -1, -1, 1, -1, -1}),
+            Vector<double>.Build.DenseOfArray(new double[] { 1, -1, -1, 1, -1, -1, 1, 1, 1}),
+            // Добавьте другие векторы по мере необходимости
+        };
+        Vector<double> inputVectorToRecognize = Vector<double>.Build.DenseOfArray(new double[] { -1, -1, -1, 1, -1, -1, 1, -1, -1 });
     }
 }
