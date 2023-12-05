@@ -5,14 +5,88 @@ using MathNet.Numerics.LinearAlgebra;
 using System.Linq;
 using System;
 using MathNet.Numerics;
+using JetBrains.Annotations;
+using System.IO;
 
 public class main : MonoBehaviour
 {
+    [SerializeField] private int minimalHammingDistance;
     private List<Vector<double>> vectors = new List<Vector<double>>();
-
-    void Start()
+    private int hammingDistance;
+    public string folderPathTrain = "Assets/Numbers/Train";
+    public string folderPathTest = "Assets/Numbers/Test";
+    void Awake()
     {
-        Main();
+        LoadImagesFromTrain();
+    }
+    public void LoadImagesFromTrain()
+    {
+        if (vectors != null)
+        {
+            vectors.Clear();
+        }
+        string[] imageFiles = Directory.GetFiles(folderPathTrain, "*.png");
+
+        foreach (var imageFile in imageFiles)
+        {
+            Vector<double> imageVector = ConvertImageToVector(imageFile);
+            vectors.Add(imageVector);
+            if (imageVector != null)
+            {
+                Debug.Log($"Vector values for {Path.GetFileName(imageFile)}:");
+                Debug.Log(imageVector);
+            }
+        }
+        Debug.Log(vectors.Count + "Train vectors amount");
+    }
+    Vector<double> ConvertImageToVector(string path)
+    {
+        // Загружаем изображение в текстуру
+        Texture2D texture = LoadTexture(path);
+
+        if (texture == null)
+        {
+            Debug.LogError("Failed to load the image.");
+            return null;
+        }
+
+        int width = texture.width;
+        int height = texture.height;
+
+        Vector<double> vector = Vector<double>.Build.Dense(width * height);
+
+        // Получаем цвета пикселей из текстуры
+        Color[] pixels = texture.GetPixels();
+
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            double grayscaleValue = pixels[i].grayscale; // Получаем яркость (от 0 до 1)
+            double normalizedValue = (grayscaleValue - 0.5) * 2.0; // Нормализуем в диапазоне от -1 до 1
+            if (grayscaleValue > 0.2f)
+            {
+                normalizedValue = -1;
+            }
+            else
+            {
+                normalizedValue = 1;
+            }
+            vector[i] = normalizedValue;
+        }
+
+        return vector;
+    }
+
+    Texture2D LoadTexture(string path)
+    {
+        byte[] fileData = System.IO.File.ReadAllBytes(path);
+        Texture2D texture = new Texture2D(2, 2);
+        texture.LoadImage(fileData); 
+
+        return texture;
+    }
+    public Vector<double>[] GetVectors()
+    {
+        return vectors.ToArray();
     }
     public void AddVector(Vector<double> newVector)
     {
@@ -21,6 +95,10 @@ public class main : MonoBehaviour
     public  Vector<double> GetLastVector()
     {
         return vectors[vectors.Count - 1];
+    }
+    public string GetHammingDistance()
+    {
+        return hammingDistance.ToString();
     }
     // Функция для расчета матрицы W
     public Matrix<double> CalculateWeightMatrix(Vector<double>[] trainingVectors)
@@ -51,8 +129,9 @@ public class main : MonoBehaviour
             weightMatrix = weightMatrix.Add(columnMatrix * columnMatrix.Transpose());
         }
 
-        // Деление на количество векторов для нормализации
+        //обнуление диагонали
         weightMatrix = ZeroOutDiagonal(weightMatrix);
+        // Деление на количество векторов для нормализации
         weightMatrix = MultiplyMatrixByScalar(weightMatrix, 1 / (double)vectorSize);
 
         return weightMatrix;
@@ -69,7 +148,6 @@ public class main : MonoBehaviour
     }
     public Matrix<double> ZeroOutDiagonal(Matrix<double> matrix)
     {
-        // Проверка, что матрица квадратная
         if (matrix.RowCount != matrix.ColumnCount)
         {
             throw new ArgumentException("Матрица должна быть квадратной для обнуления диагонали.");
@@ -88,32 +166,15 @@ public class main : MonoBehaviour
     }
     public Matrix<double> MultiplyMatrixByVector(Matrix<double> matrix, Vector<double> vector)
     {
-        // Умножение матрицы на транспонированный вектор-столбец
-        Vector<double> resultVector = matrix.Multiply(vector.ToColumnMatrix().Column(0));
-
-        // Создание матрицы из вектора-столбца
-        Matrix<double> resultMatrix = Matrix<double>.Build.DenseOfColumnVectors(resultVector);
+        Matrix<double> resultMatrix = matrix * vector.ToColumnMatrix();
 
         return resultMatrix;
-    }
-
-
-    public Vector<double> MultiplyMatrixByVector2(Matrix<double> matrix, Vector<double> vector)
-    {
-        // Умножение матрицы на вектор-столбец
-        Vector<double> resultVector = matrix.Multiply(vector);
-
-        // Можно также использовать оператор умножения:
-        // Vector<double> resultVector = matrix * vector;
-
-        return resultVector;
     }
     public Vector<double> SignedVectorElements(Vector<double> inputVector)
     {
         // Создаем копию вектора, чтобы не изменять оригинал
         Vector<double> modifiedVector = inputVector.Clone();
 
-        // Проходим по каждому элементу вектора и меняем его в соответствии с условием
         for (int i = 0; i < modifiedVector.Count; i++)
         {
             modifiedVector[i] = (modifiedVector[i] >= 0) ? 1 : -1;
@@ -121,19 +182,7 @@ public class main : MonoBehaviour
 
         return modifiedVector;
     }
-    public int IdentifyRecognizedPattern(Vector<double> recognizedVector, Vector<double>[] trainingVectors)
-    {
-        for (int i = 0; i < trainingVectors.Length; i++)
-        {
-            // Сравнение распознанного вектора с обучающими
-            if (recognizedVector.Equals(trainingVectors[i]))
-            {
-                return i; // Возвращаем индекс распознанного вектора
-            }
-        }
 
-        return -1; // Возвращаем -1, если ни один вектор не совпал
-    }
     // Функция для поиска индекса наилучшего соответствия
     private int FindBestMatchIndex(Vector<double> targetVector, Vector<double>[] candidates)
     {
@@ -148,10 +197,14 @@ public class main : MonoBehaviour
                 minHammingDistance = hammingDistance;
                 bestMatchIndex = i;
             }
-            //Debug.Log("hamming distance "+ hammingDistance + " index " + bestMatchIndex);
         }
-
         Debug.Log("min hamming distance " + minHammingDistance + " beast match index " + bestMatchIndex);
+        hammingDistance = (int)minHammingDistance;
+        if (minHammingDistance > minimalHammingDistance)
+        {
+            bestMatchIndex = -1;
+            Debug.Log("Didn't recognize!");
+        }
         return bestMatchIndex;
     }
 
@@ -171,24 +224,30 @@ public class main : MonoBehaviour
         return differingBits;
     }
     // Пример использования
-    public void HopfieldNeuralNetWork(Vector<double> inputVectorToRecognize)
+    public Vector<double> HopfieldNeuralNetWork(Vector<double> inputVectorToRecognize)
     {
+        // Из листа и векторами для тренировки делаем массив
         Vector<double>[] trainingVectors = vectors.ToArray();
         // Рассчет матрицы W с обнулёнными диагоналями и нормализовнный
         Matrix<double> weightMatrix = CalculateWeightMatrix(trainingVectors);
         // Умножаем на транспонировнный вектор который хотим расопзнать
         weightMatrix = MultiplyMatrixByVector(weightMatrix, inputVectorToRecognize);
+
         //Делаем из матрицы вектор
         double[] columnMajorArray = weightMatrix.ToColumnMajorArray();
         Vector<double> columnVector = Vector<double>.Build.Dense(columnMajorArray);
+
         //Наш вектор прошедший через функцию sign
         columnVector = SignedVectorElements(columnVector);
         //Сравнение с векторами на которых обучали 
         int numberOfRecognizedVector = FindBestMatchIndex(columnVector, trainingVectors);
-        inputVectorToRecognize = columnVector;
+
         // Вывод матрицы W
         Debug.Log("Порядковый номер вектора " + numberOfRecognizedVector);
         Debug.Log(inputVectorToRecognize);
+        Debug.Log(vectors.Count);
+
+        return columnVector;
     }
     public void Main()
     {

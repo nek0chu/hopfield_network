@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using MathNet.Numerics.LinearAlgebra;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.Rendering;
 
 public class UiManager : MonoBehaviour
 {
@@ -11,6 +13,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] private main mainSkript;
     [SerializeField] private GameObject GridLayout; 
     [SerializeField] private GameObject imagesToTrainOn;
+    [SerializeField] private TextMeshProUGUI hammingDistance;
     [Header("Buttons")]
     [SerializeField] private Button openImagesToTrainButton;
     [SerializeField] private Button closeImagesToTrainButton;
@@ -18,16 +21,53 @@ public class UiManager : MonoBehaviour
     [SerializeField] private Button clearButton;
     [SerializeField] private Button checkCurrentImageButton;
     [SerializeField] private Button showOnQuadButton;
+    [SerializeField] private Button convertSpritesButton;
     void Start()
     {
         openImagesToTrainButton.onClick.AddListener(() => imagesToTrainOn.SetActive(true)); 
         closeImagesToTrainButton.onClick.AddListener(() => imagesToTrainOn.SetActive(false));
-        addNewTrainVectorButton.onClick.AddListener(AddNewTrainVector);
+        addNewTrainVectorButton.onClick.AddListener(() => AddNewTrainVector(playerController.GetTexture()));
         clearButton.onClick.AddListener(playerController.FillTextureWithWhite);
         checkCurrentImageButton.onClick.AddListener(CheckCurrentImage);
         showOnQuadButton.onClick.AddListener(ShowLastVector);
+        convertSpritesButton.onClick.AddListener(() => ShowInScrolRect(mainSkript.GetVectors()));
         playerController.FillTextureWithWhite();
+        ShowInScrolRect(mainSkript.GetVectors());
     }
+    public void ShowInScrolRect(Vector<double>[] vectors)
+    {
+        if (GridLayout.transform.childCount > 0)
+        {
+            // Проходимся по всем дочерним объектам и удаляем их
+            foreach (Transform child in GridLayout.transform)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+        for (int i = 0; i < vectors.Length; i++)
+        {
+            Texture2D newTexture = VectorToTexture(vectors[i], playerController.GetTextureSize(), playerController.GetTextureSize());
+
+            // Создаем новый RawImage
+            GameObject newRawImageObject = new GameObject("RawImage");
+            RawImage rawImage = newRawImageObject.AddComponent<RawImage>();
+
+            // Копируем текстуру, чтобы изменения не затрагивали оригинал
+            Texture2D copiedTexture = new Texture2D(newTexture.width, newTexture.height);
+            copiedTexture.SetPixels(newTexture.GetPixels());
+            copiedTexture.filterMode = playerController.GetFilterMode();
+            copiedTexture.wrapMode = playerController.GetWrapMode();
+            copiedTexture.Apply();
+            rawImage.material = basedMaterial;
+            // Присваиваем текстуру RawImage
+            rawImage.texture = copiedTexture;
+
+            // Делаем новый RawImage дочерним для GridLayout
+            newRawImageObject.transform.SetParent(GridLayout.transform, false);
+        }
+        Debug.Log(mainSkript.GetVectors().Length + "Train verors amount");
+    }
+ 
     public void ShowLastVector()
     {
         Texture2D newTexture = playerController.GetTexture();
@@ -35,6 +75,7 @@ public class UiManager : MonoBehaviour
         newTexture = VectorToTexture(mainSkript.GetLastVector(), size, size);
         playerController.SetTexture(newTexture);
     }
+
     public void CheckCurrentImage()
     {
         // Получаем текущую текстуру
@@ -42,12 +83,16 @@ public class UiManager : MonoBehaviour
 
         // Ваши последующие действия
         Vector<double> newVector = TextureToVector(newTexture);
-        mainSkript.HopfieldNeuralNetWork(newVector);
+        int size = playerController.GetTextureSize();
+        Vector<double> hammingVector = mainSkript.HopfieldNeuralNetWork(newVector);
+        Texture2D showHVextor = VectorToTexture(hammingVector, size, size);
+        playerController.SetTexture(showHVextor);
+        hammingDistance.text = mainSkript.GetHammingDistance();
     }
-    public void AddNewTrainVector()
+    public void AddNewTrainVector(Texture2D texture)
     {
         // Получаем текущую текстуру
-        Texture2D newTexture = playerController.GetTexture();
+        Texture2D newTexture = texture;
 
         // Создаем новый RawImage
         GameObject newRawImageObject = new GameObject("RawImage");
@@ -66,7 +111,6 @@ public class UiManager : MonoBehaviour
         // Делаем новый RawImage дочерним для GridLayout
         newRawImageObject.transform.SetParent(GridLayout.transform, false);
 
-        // Ваши последующие действия
         Vector<double> newVector = TextureToVector(newTexture);
         mainSkript.AddVector(newVector);
         playerController.FillTextureWithWhite();
@@ -91,11 +135,12 @@ public class UiManager : MonoBehaviour
             }
             else
             {
-                // Иначе присваиваем 0
+                // Иначе присваиваем -1
                 resultVector[i] = 1.0;
             }
         }
 
+        Debug.Log("TextureToVector " + resultVector);
         return resultVector;
     }
     public static Texture2D VectorToTexture(Vector<double> vector, int width, int height)
@@ -115,7 +160,7 @@ public class UiManager : MonoBehaviour
                 int index = y * width + x;
 
                 // Если значение вектора равно 1, устанавливаем черный цвет, иначе — белый
-                Color pixelColor = (values[index] == 1.0) ? Color.black : Color.white;
+                Color pixelColor = (values[index] == 1.0) ? Color.black : Color.white;;
 
                 // Устанавливаем цвет пикселя в текстуре
                 texture.SetPixel(x, y, pixelColor);
@@ -124,7 +169,7 @@ public class UiManager : MonoBehaviour
 
         // Применяем изменения к текстуре
         texture.Apply();
-
+        Debug.Log(vector + "TextureToVector");
         return texture;
     }
 }

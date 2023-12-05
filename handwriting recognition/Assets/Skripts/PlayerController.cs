@@ -46,13 +46,13 @@ public class PlayerController : MonoBehaviour
     private void Press_started(InputAction.CallbackContext obj)
     {
         isPressed = true;
-        StartCoroutine(onPressing());
+        //StartCoroutine(onPressing());
         //Debug.Log("Press started");
     }
     private void Press_canceled(InputAction.CallbackContext obj)
     {
         isPressed = false;
-        StopCoroutine(onPressing());
+        //StopCoroutine(onPressing());
         //Debug.Log("Press canceled");
     }
     private void OnEnable()
@@ -63,9 +63,29 @@ public class PlayerController : MonoBehaviour
     {
         controls.Disable();
     }
-    void OnDestroy()
+    private void Update()
     {
-        controls.Disable();
+        if (isPressed)
+        {
+            Ray ray = _camera.ScreenPointToRay(pressPosition.ReadValue<Vector2>());
+
+            RaycastHit hit;
+            if (_collider.Raycast(ray, out hit, 100f))
+            {
+
+                int rayX = (int)(hit.textureCoord.x * _textureSize);
+                int rayY = (int)(hit.textureCoord.y * _textureSize);
+
+                if (_oldRayX != rayX || _oldRayY != rayY)
+                {
+                    DrawQuad(rayX, rayY);
+                    //DrawCircle(rayX, rayY);
+                    _oldRayX = rayX;
+                    _oldRayY = rayY;
+                }
+                _texture.Apply();
+            }
+        }
     }
     IEnumerator onPressing()
     {
