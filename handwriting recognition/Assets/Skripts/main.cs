@@ -7,17 +7,40 @@ using System;
 using MathNet.Numerics;
 using JetBrains.Annotations;
 using System.IO;
+using TMPro;
 
 public class main : MonoBehaviour
 {
     [SerializeField] private int minimalHammingDistance;
     private List<Vector<double>> vectors = new List<Vector<double>>();
+    private List<Vector<double>> vectorsTest = new List<Vector<double>>();
     private int hammingDistance;
     public string folderPathTrain = "Assets/Numbers/Train";
     public string folderPathTest = "Assets/Numbers/Test";
     void Awake()
     {
         LoadImagesFromTrain();
+        LoadImagesFromTest();
+    }
+    public void LoadImagesFromTest()
+    {
+        if (vectorsTest != null)
+        {
+            vectorsTest.Clear();
+        }
+        string[] imageFiles = Directory.GetFiles(folderPathTest, "*.png");
+
+        foreach (var imageFile in imageFiles)
+        {
+            Vector<double> imageVector = ConvertImageToVector(imageFile);
+            vectorsTest.Add(imageVector);
+            if (imageVector != null)
+            {
+                Debug.Log($"Vector values for {Path.GetFileName(imageFile)}:");
+                Debug.Log(imageVector);
+            }
+        }
+        Debug.Log(vectorsTest.Count + "Test vectors amount");
     }
     public void LoadImagesFromTrain()
     {
@@ -87,6 +110,10 @@ public class main : MonoBehaviour
     public Vector<double>[] GetVectors()
     {
         return vectors.ToArray();
+    }
+    public Vector<double>[] GetVectorsTest()
+    {
+        return vectorsTest.ToArray();
     }
     public void AddVector(Vector<double> newVector)
     {

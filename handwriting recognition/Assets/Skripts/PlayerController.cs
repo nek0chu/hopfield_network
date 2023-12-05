@@ -26,12 +26,34 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int _brushSize = 8;
 
     private int _oldRayX, _oldRayY;
+
+    [SerializeField] private Button whiteColorButton;
+    [SerializeField] private Button blackColorButton;
+    [SerializeField] private Image blackColorSelected;
+    [SerializeField] private Image whiteColorSelected;
     private void Awake() 
     {
         controls = new Controls();
         press = controls.painting.Press;
         pressPosition = controls.painting.Position;
         EnableControls();
+    }
+    private void Start()
+    {
+        whiteColorButton.onClick.AddListener(SelectWhiteBrush);
+        blackColorButton.onClick.AddListener(SelectBlackBrush);
+    }
+    public void SelectBlackBrush()
+    {
+        _color = Color.black;
+        whiteColorSelected.color = new Color(whiteColorSelected.color.r, whiteColorSelected.color.g, whiteColorSelected.color.b, 0f);
+        blackColorSelected.color = new Color(blackColorSelected.color.r, blackColorSelected.color.g, blackColorSelected.color.b, 1f);
+    }
+    public void SelectWhiteBrush()
+    {
+        _color = Color.white;
+        whiteColorSelected.color = new Color(whiteColorSelected.color.r , whiteColorSelected.color.g , whiteColorSelected.color.b, 1f);
+        blackColorSelected.color = new Color(blackColorSelected.color.r , blackColorSelected.color.g , blackColorSelected.color.b, 0f);
     }
     public void EnableControls()
     {
