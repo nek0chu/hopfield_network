@@ -41,6 +41,8 @@ public class UiManager : MonoBehaviour
         playerController.FillTextureWithWhite();
         ShowTrainInScrolRect(mainSkript.GetVectors());
         ShowTestInScrolRect(mainSkript.GetVectorsTest());
+        CheckCurrentImage();
+        playerController.FillTextureWithWhite();
     }
     public void ShowCurrentTextureToVector()
     {
@@ -200,7 +202,8 @@ public class UiManager : MonoBehaviour
 
         // ѕреобразуем вектор в массив значений
         double[] values = vector.ToArray();
-
+        Debug.Log("AAAAAAAAAAAAAAA VALUES Length" + values.Length);
+        Debug.Log("AAAAAAAAAAAAAAA vector " + vector.ToString());
         // ѕроходим по каждому пикселю текстуры
         for (int y = 0; y < height; y++)
         {
@@ -209,7 +212,7 @@ public class UiManager : MonoBehaviour
                 // ѕолучаем индекс элемента вектора, соответствующего текущему пикселю
                 int index = y * width + x;
                 //int index = y + x;
-
+                Debug.Log(index + "aaaaaaaaaaaaaaaaaaaa index");
                 // ≈сли значение вектора равно 1, устанавливаем черный цвет, иначе Ч белый
                 Color pixelColor = (values[index] >= 0.0) ? Color.black : Color.white;;// если что помен€ть на ==
 

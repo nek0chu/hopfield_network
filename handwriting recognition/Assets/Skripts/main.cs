@@ -12,16 +12,22 @@ using TMPro;
 public class main : MonoBehaviour
 {
     [SerializeField] private int minimalHammingDistance;
+    [SerializeField] private Texture2D[] trainingImages;
+    [SerializeField] private Texture2D[] testImages;
     private List<Vector<double>> vectors = new List<Vector<double>>();
     private List<Vector<double>> vectorsTest = new List<Vector<double>>();
     private int hammingDistance;
-    public string folderPathTrain = "Assets/Numbers/Train";
-    public string folderPathTest = "Assets/Numbers/Test";
+    
+    public string folderPathTrainingEditor = "Assets/Numbers/Train";
+    public string folderPathTestEgitor = "Assets/Numbers/Test";
+    public string folderPathTraining = "Numbers/Train";
+    public string folderPathTest = "Numbers/Test";
     void Awake()
     {
-        LoadImagesFromTrain();
-        LoadImagesFromTest();
+        LoadImagesFromTrainMain();
+        LoadImagesFromTestMain();
     }
+    /* страя загрузка файлов
     public void LoadImagesFromTest()
     {
         if (vectorsTest != null)
@@ -48,7 +54,7 @@ public class main : MonoBehaviour
         {
             vectors.Clear();
         }
-        string[] imageFiles = Directory.GetFiles(folderPathTrain, "*.png");
+        string[] imageFiles = Directory.GetFiles(folderPathTraining, "*.png");
 
         foreach (var imageFile in imageFiles)
         {
@@ -61,7 +67,73 @@ public class main : MonoBehaviour
             }
         }
         Debug.Log(vectors.Count + "Train vectors amount");
+    }*/
+    public void LoadImagesFromTrainMain()
+    {
+        if (vectors != null)
+        {
+            vectors.Clear();
+        }
+        foreach (var texture in trainingImages)
+        {
+            Vector<double> imageVector = ConvertImageToVectorMain(texture);
+            vectors.Add(imageVector);
+            Debug.Log("Train vector" + imageVector);
+        }
+        Debug.Log(vectors.Count + "Train vectors amount");
     }
+    public void LoadImagesFromTestMain()
+    {
+        if (vectorsTest != null)
+        {
+            vectorsTest.Clear();
+        }
+        foreach (var texture in testImages)
+        {
+            Vector<double> imageVector = ConvertImageToVectorMain(texture);
+            vectorsTest.Add(imageVector);
+            Debug.Log("Test Vector" + imageVector);
+        }
+        Debug.Log(vectorsTest.Count + "Test vectors amount");
+    }
+    Vector<double> ConvertImageToVectorMain(Texture2D newTexture)
+    {
+        // Загружаем изображение в текстуру
+        Texture2D texture = newTexture;
+
+        if (texture == null)
+        {
+            Debug.LogError("Failed to load the image.");
+            return null;
+        }
+
+        int width = texture.width;
+        int height = texture.height;
+        Debug.Log($"Inconvert wi{width} and he{height} vect size {width * height}");
+
+        Vector<double> vector = Vector<double>.Build.Dense(width * height);
+
+        // Получаем цвета пикселей из текстуры
+        Color[] pixels = texture.GetPixels();
+
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            double grayscaleValue = pixels[i].grayscale; // Получаем яркость (от 0 до 1)
+            double normalizedValue = (grayscaleValue - 0.5) * 2.0; // Нормализуем в диапазоне от -1 до 1
+            if (grayscaleValue > 0.2f)
+            {
+                normalizedValue = -1;
+            }
+            else
+            {
+                normalizedValue = 1;
+            }
+            vector[i] = normalizedValue;
+        }
+
+        return vector;
+    }
+
     Vector<double> ConvertImageToVector(string path)
     {
         // Загружаем изображение в текстуру

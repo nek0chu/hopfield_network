@@ -69,13 +69,13 @@ public class PlayerController : MonoBehaviour
     {
         isPressed = true;
         //StartCoroutine(onPressing());
-        //Debug.Log("Press started");
+        Debug.Log("Press started");
     }
     private void Press_canceled(InputAction.CallbackContext obj)
     {
         isPressed = false;
         //StopCoroutine(onPressing());
-        //Debug.Log("Press canceled");
+        Debug.Log("Press canceled");
     }
     private void OnEnable()
     {
@@ -85,19 +85,24 @@ public class PlayerController : MonoBehaviour
     {
         controls.Disable();
     }
+    public void QuitGame()
+    {
+        Application.Quit();
+    }
     private void Update()
     {
         if (isPressed)
         {
-            Ray ray = _camera.ScreenPointToRay(pressPosition.ReadValue<Vector2>());
-
+            Vector2 pressPos = pressPosition.ReadValue<Vector2>();
+            Ray ray = _camera.ScreenPointToRay(pressPos);
+            Debug.Log(pressPos + " press pos");
             RaycastHit hit;
             if (_collider.Raycast(ray, out hit, 100f))
             {
 
                 int rayX = (int)(hit.textureCoord.x * _textureSize);
                 int rayY = (int)(hit.textureCoord.y * _textureSize);
-
+                
                 if (_oldRayX != rayX || _oldRayY != rayY)
                 {
                     DrawQuad(rayX, rayY);
