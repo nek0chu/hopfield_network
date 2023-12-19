@@ -142,7 +142,13 @@ public class PlayerController : MonoBehaviour
     }
     public void SetTexture(Texture2D setTexture)
     {
-        _texture = setTexture;
+        Texture2D copiedTexture = new Texture2D(setTexture.width, setTexture.height);
+        copiedTexture.SetPixels(setTexture.GetPixels());
+        copiedTexture.filterMode = GetFilterMode();
+        copiedTexture.wrapMode = GetWrapMode();
+        copiedTexture.Apply();
+
+        _texture = copiedTexture;
         _texture.Apply();
         OnValidate();
     }

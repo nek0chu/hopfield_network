@@ -13,36 +13,73 @@ public class UiManager : MonoBehaviour
     [SerializeField] private main mainSkript;
     [SerializeField] private GameObject gridLayoutTrain; 
     [SerializeField] private GameObject gridLayoutTest; 
+    [SerializeField] private GameObject gridLayoutMyFiles; 
     [SerializeField] private GameObject imagesToTrainOn;
     [SerializeField] private GameObject imagesToTestOn;
+    [SerializeField] private GameObject myFiles;
+    [SerializeField] private GameObject warning;
     [Header("Buttons")]
     [SerializeField] private Button openImagesToTrainButton;
     [SerializeField] private Button openImagesToTestButton;
+    [SerializeField] private Button openMyFilesButton;
     [SerializeField] private Button closeImagesToTrainButton;
     [SerializeField] private Button closeImagesToTestButton;
+    [SerializeField] private Button closeMyFilesButton;
     [SerializeField] private Button addNewTrainVectorButton;
     [SerializeField] private Button clearButton;
     [SerializeField] private Button checkCurrentImageButton;
     [SerializeField] private Button showOnQuadButton;
     [SerializeField] private Button convertSpritesButton;
     [SerializeField] private Button currentTextureToVectorButton;
+    [SerializeField] private Button deleteTrainingVectorsInTrainingVectors;
+    [SerializeField] private Button deleteTrainingVectorsInMyFiles;
+    [SerializeField] private Button loadCDJM;
+    [SerializeField] private Button closeWarning;
     void Start()
     {
         openImagesToTrainButton.onClick.AddListener(() => imagesToTrainOn.SetActive(true)); 
         openImagesToTestButton.onClick.AddListener(() => imagesToTestOn.SetActive(true)); 
+        openMyFilesButton.onClick.AddListener(() => myFiles.SetActive(true)); 
         closeImagesToTrainButton.onClick.AddListener(() => imagesToTrainOn.SetActive(false));
         closeImagesToTestButton.onClick.AddListener(() => imagesToTestOn.SetActive(false));
+        closeMyFilesButton.onClick.AddListener(() => myFiles.SetActive(false));
         addNewTrainVectorButton.onClick.AddListener(() => AddNewTrainVector(playerController.GetTexture()));
         clearButton.onClick.AddListener(playerController.FillTextureWithWhite);
         checkCurrentImageButton.onClick.AddListener(CheckCurrentImage);
         showOnQuadButton.onClick.AddListener(ShowLastVector);
         convertSpritesButton.onClick.AddListener(() => ShowTrainInScrolRect(mainSkript.GetVectors()));
         currentTextureToVectorButton.onClick.AddListener(ShowCurrentTextureToVector);
+
+        deleteTrainingVectorsInMyFiles.onClick.AddListener(DeleteTraingVectors);
+        deleteTrainingVectorsInTrainingVectors.onClick.AddListener(DeleteTraingVectors);
+        loadCDJM.onClick.AddListener(LoadCDJM);
+
+        closeWarning.onClick.AddListener(() => warning.SetActive(false));
+
         playerController.FillTextureWithWhite();
         ShowTrainInScrolRect(mainSkript.GetVectors());
         ShowTestInScrolRect(mainSkript.GetVectorsTest());
+        ShowMyFilesInScrolRect(mainSkript.GetMyFilesVectors());
         CheckCurrentImage();
         playerController.FillTextureWithWhite();
+    }
+    private void DeleteTraingVectors()
+    {
+        mainSkript.ClearVectors();
+        if (gridLayoutTrain.transform.childCount > 0)
+        {
+            // Проходимся по всем дочерним объектам и удаляем их
+            foreach (Transform child in gridLayoutTrain.transform)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+    }
+    private void LoadCDJM()
+    {
+        DeleteTraingVectors();
+        mainSkript.LoadImagesFromTrainMain();
+        ShowTrainInScrolRect(mainSkript.GetVectors());
     }
     public void ShowCurrentTextureToVector()
     {
@@ -81,6 +118,43 @@ public class UiManager : MonoBehaviour
             newRawImageObject.transform.SetParent(gridLayoutTest.transform, false);
             button.onClick.AddListener(() => playerController.SetTexture(copiedTexture));
             button.onClick.AddListener(() => imagesToTestOn.SetActive(false));
+
+        }
+        Debug.Log(mainSkript.GetVectorsTest().Length + "Train verors amount");
+    }
+    public void ShowMyFilesInScrolRect(Vector<double>[] vectors)
+    {
+        if (gridLayoutMyFiles.transform.childCount > 0)
+        {
+            // Проходимся по всем дочерним объектам и удаляем их
+            foreach (Transform child in gridLayoutMyFiles.transform)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+        for (int i = 0; i < vectors.Length; i++)
+        {
+            Texture2D newTexture = VectorToTexture(vectors[i], playerController.GetTextureSize(), playerController.GetTextureSize());
+
+            // Создаем новый RawImage
+            GameObject newRawImageObject = new GameObject("RawImage");
+            RawImage rawImage = newRawImageObject.AddComponent<RawImage>();
+            Button button = newRawImageObject.AddComponent<Button>();
+
+            // Копируем текстуру, чтобы изменения не затрагивали оригинал
+            Texture2D copiedTexture = new Texture2D(newTexture.width, newTexture.height);
+            copiedTexture.SetPixels(newTexture.GetPixels());
+            copiedTexture.filterMode = playerController.GetFilterMode();
+            copiedTexture.wrapMode = playerController.GetWrapMode();
+            copiedTexture.Apply();
+            rawImage.material = basedMaterial;
+            // Присваиваем текстуру RawImage
+            rawImage.texture = copiedTexture;
+
+            // Делаем новый RawImage дочерним для GridLayout
+            newRawImageObject.transform.SetParent(gridLayoutMyFiles.transform, false);
+            button.onClick.AddListener(() => playerController.SetTexture(copiedTexture));
+            button.onClick.AddListener(() => myFiles.SetActive(false));
 
         }
         Debug.Log(mainSkript.GetVectorsTest().Length + "Train verors amount");
@@ -129,17 +203,25 @@ public class UiManager : MonoBehaviour
 
     public void CheckCurrentImage()
     {
-        // Получаем текущую текстуру
-        Texture2D newTexture = playerController.GetTexture();
+        if (mainSkript.GetVectors().Length > 0)
+        {
+            // Получаем текущую текстуру
+            Texture2D newTexture = playerController.GetTexture();
 
-        // Ваши последующие действия
-        Vector<double> newVector = TextureToVector(newTexture);
-        Debug.Log("vector brfor hemming" + newVector);
-        int size = playerController.GetTextureSize();
-        Vector<double> hammingVector = mainSkript.HopfieldNeuralNetWork(newVector);
-        Debug.Log("Vector After Hamming " + hammingVector);
-        Texture2D showHVextor = VectorToTexture(hammingVector, size, size);
-        playerController.SetTexture(showHVextor);
+            // Ваши последующие действия
+            Vector<double> newVector = TextureToVector(newTexture);
+            Debug.Log("vector brfor hemming" + newVector);
+            int size = playerController.GetTextureSize();
+            Vector<double> hammingVector = mainSkript.HopfieldNeuralNetWork(newVector);
+            Debug.Log("Vector After Hamming " + hammingVector);
+            Texture2D showHVextor = VectorToTexture(hammingVector, size, size);
+            playerController.SetTexture(showHVextor);
+        }
+        else
+        {
+            warning.SetActive(true);
+        }
+
     }
     public void AddNewTrainVector(Texture2D texture)
     {

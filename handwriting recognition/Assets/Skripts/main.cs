@@ -16,58 +16,71 @@ public class main : MonoBehaviour
     [SerializeField] private Texture2D[] testImages;
     private List<Vector<double>> vectors = new List<Vector<double>>();
     private List<Vector<double>> vectorsTest = new List<Vector<double>>();
+    private List<Vector<double>> myFiles = new List<Vector<double>>();
     private int hammingDistance;
-    
-    public string folderPathTrainingEditor = "Assets/Numbers/Train";
-    public string folderPathTestEgitor = "Assets/Numbers/Test";
-    public string folderPathTraining = "Numbers/Train";
-    public string folderPathTest = "Numbers/Test";
+    public string folderName = "My Files";
+
     void Awake()
     {
         LoadImagesFromTrainMain();
         LoadImagesFromTestMain();
+        LoadMyFiles();
     }
-    /* страя загрузка файлов
-    public void LoadImagesFromTest()
-    {
-        if (vectorsTest != null)
-        {
-            vectorsTest.Clear();
-        }
-        string[] imageFiles = Directory.GetFiles(folderPathTest, "*.png");
 
-        foreach (var imageFile in imageFiles)
+    void LoadMyFiles()
+    {
+        string folderPath = Path.Combine(Application.dataPath, folderName);
+
+        if (Directory.Exists(folderPath))
         {
-            Vector<double> imageVector = ConvertImageToVector(imageFile);
-            vectorsTest.Add(imageVector);
-            if (imageVector != null)
+            string[] txtPaths = Directory.GetFiles(folderPath, "*.txt"); 
+
+            foreach (string txtPath in txtPaths)
             {
-                Debug.Log($"Vector values for {Path.GetFileName(imageFile)}:");
-                Debug.Log(imageVector);
+                //обрабытывать все файлы
+                Texture2D texture = ConvertTxtToTexture2D(txtPath);
+
+                Vector<double> imageVector = ConvertImageToVectorMain(texture);
+                myFiles.Add(imageVector);
+                Debug.Log("MyFile" + imageVector);
+
             }
         }
-        Debug.Log(vectorsTest.Count + "Test vectors amount");
-    }
-    public void LoadImagesFromTrain()
-    {
-        if (vectors != null)
+        else
         {
-            vectors.Clear();
+            Debug.LogError("Folder not found: " + folderPath);
         }
-        string[] imageFiles = Directory.GetFiles(folderPathTraining, "*.png");
+    }
+    Texture2D ConvertTxtToTexture2D(string filePath)
+    {
+        string[] lines = File.ReadAllLines(filePath);
 
-        foreach (var imageFile in imageFiles)
+        if (lines.Length == 0)
         {
-            Vector<double> imageVector = ConvertImageToVector(imageFile);
-            vectors.Add(imageVector);
-            if (imageVector != null)
+            Debug.LogError("File is empty: " + filePath);
+            return null;
+        }
+        int width = lines[0].Length;
+        int height = lines.Length;
+
+        Texture2D texture = new Texture2D(width, height);
+
+        for (int y = 0; y < height; y++)
+        {
+            char[] chars = lines[y].ToCharArray();
+
+            int reversedY = height - 1 - y;
+
+            for (int x = 0; x < width; x++)
             {
-                Debug.Log($"Vector values for {Path.GetFileName(imageFile)}:");
-                Debug.Log(imageVector);
+                Color pixelColor = (chars[x] == '0') ? Color.white : Color.black;
+                texture.SetPixel(x, reversedY, pixelColor);
             }
         }
-        Debug.Log(vectors.Count + "Train vectors amount");
-    }*/
+
+        texture.Apply();
+        return texture;
+    }
     public void LoadImagesFromTrainMain()
     {
         if (vectors != null)
@@ -183,9 +196,22 @@ public class main : MonoBehaviour
     {
         return vectors.ToArray();
     }
+    public void SetVectors(Vector<double>[] newVectors)
+    {
+        vectors.Clear();
+        vectors = newVectors.ToList();
+    }
+    public void ClearVectors()
+    {
+        vectors.Clear();
+    }
     public Vector<double>[] GetVectorsTest()
     {
         return vectorsTest.ToArray();
+    }
+    public Vector<double>[] GetMyFilesVectors()
+    {
+        return myFiles.ToArray();
     }
     public void AddVector(Vector<double> newVector)
     {
