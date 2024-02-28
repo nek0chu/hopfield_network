@@ -1,2 +1,2 @@
-# handwriting_recognition
-handwriting recognition using hopfield neural networks
+# Hopfield network
+Images recognition using hopfield neural networks
