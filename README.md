@@ -1,2 +1,2 @@
 # Hopfield network
-Images recognition using hopfield neural networks
+Hopfield neural network in unity
